@@ -11,7 +11,8 @@ fi
 mkdir -p luanti
 pushd luanti
 
-export EMSDK_EXTRA="-sUSE_SDL=2"
+export EMSDK_PORTS="--use-port=zlib --use-port=libjpeg --use-port=libpng --use-port=freetype --use-port=ogg --use-port=vorbis --use-port=sqlite3"
+export EMSDK_EXTRA="-sUSE_SDL=2 $EMSDK_PORTS"
 export CFLAGS="$CFLAGS $EMSDK_EXTRA"
 export CXXFLAGS="$CXXFLAGS $EMSDK_EXTRA"
 export LDFLAGS="$LDFLAGS $EMSDK_EXTRA -sPTHREAD_POOL_SIZE=20 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s INITIAL_MEMORY=2013265920 -sMIN_WEBGL_VERSION=2 -sUSE_WEBGL2 -sWASMFS=1"
@@ -34,24 +35,12 @@ if ! $INCREMENTAL; then
       -DRUN_IN_PLACE=TRUE \
       -DENABLE_GLES=TRUE \
       -DENABLE_UPDATE_CHECKER=0 \
+      -DPNG_LIBRARY="-lpng-mt" \
+      -DVORBISFILE_LIBRARY="$DUMMY_OBJECT" \
+      -DSQLITE3_LIBRARY="$DUMMY_OBJECT" \
       -DCMAKE_BUILD_TYPE="$LUANTI_BUILD_TYPE" \
-      -DZLIB_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DZLIB_LIBRARY="$INSTALL_DIR/lib/libz.a" \
-      -DJPEG_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DJPEG_LIBRARY="$INSTALL_DIR/lib/libjpeg.a" \
-      -DPNG_PNG_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DPNG_LIBRARY="$INSTALL_DIR/lib/libpng.a" \
-      -DOGG_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DVORBIS_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DOGG_LIBRARY="$INSTALL_DIR/lib/libogg.a" \
-      -DVORBIS_LIBRARY="$INSTALL_DIR/lib/libvorbis.a" \
-      -DVORBISFILE_LIBRARY="$INSTALL_DIR/lib/libvorbisfile.a" \
-      -DFREETYPE_LIBRARY="$INSTALL_DIR/lib/libfreetype.a" \
-      -DFREETYPE_INCLUDE_DIRS="$INSTALL_DIR/include/freetype2" \
       -DOPENGLES2_INCLUDE_DIR="$DUMMY_INCLUDE_DIR" \
       -DOPENGLES2_LIBRARY="$DUMMY_OBJECT" \
-      -DSQLITE3_LIBRARY="$INSTALL_DIR/lib/libsqlite3.a" \
-      -DSQLITE3_INCLUDE_DIR="$INSTALL_DIR/include" \
       -DZSTD_LIBRARY="$INSTALL_DIR/lib/libzstd.a" \
       -DZSTD_INCLUDE_DIR="$INSTALL_DIR/include" \
       -DEGL_LIBRARY="$DUMMY_OBJECT" \
