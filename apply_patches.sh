@@ -10,6 +10,5 @@ fi
 EMSDK_ROOT="$1"
 cd "$EMSDK_ROOT"
 
-patch -p1 < "$BASE_DIR/emsdk_file_packager.patch"
 patch -p1 < "$BASE_DIR/emsdk_dirperms.patch"
 patch -p1 < "$BASE_DIR/emsdk_openat.patch"
