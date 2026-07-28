@@ -1,7 +1,7 @@
 Dockerfile
 build/
 build-*/
-minetest
+luanti
 www
 .git
 .github

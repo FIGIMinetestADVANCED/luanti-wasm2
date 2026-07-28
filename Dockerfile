@@ -14,11 +14,11 @@ RUN \
 		zstd \
 		gettext
 
-COPY . /minetest-wasm
+COPY . /luanti-wasm
 
-# Build minetest-wasm
+# Build luanti-wasm
 RUN \
-	   cd /minetest-wasm \
+	   cd /luanti-wasm \
 	&& ls -la \
         && ./install_emsdk.sh \
 	&& ./build_all.sh

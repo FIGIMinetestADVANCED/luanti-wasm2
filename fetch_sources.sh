@@ -27,8 +27,8 @@ getrepo freetype "https://gitlab.freedesktop.org/freetype/freetype.git" a8e4563c
 getrepo zstd "https://github.com/facebook/zstd.git" e47e674cd09583ff0503f0f6defd6d23d8b718d3
 
 # Minetest Game
-getrepo minetest_game "https://github.com/minetest/minetest_game.git" 052ccb09280a1fa52022c7e120437b1e6dc82771
+getrepo minetest_game "https://github.com/luanti-org/minetest_game.git" 052ccb09280a1fa52022c7e120437b1e6dc82771
 
 # These repos are part of the fork
 getrepo webshims "https://github.com/paradust7/webshims.git" 0767fdedd87f61a28a34f6444b669caf563a9fd5
-getrepo minetest "https://github.com/paradust7/minetest.git" 1cfdd6d6bedbd860ab993e99db18f29db1a0c5d2
+getrepo luanti "https://github.com/paradust7/luanti.git" 239e54d37d09a5f51332dded69f1db99c882f793

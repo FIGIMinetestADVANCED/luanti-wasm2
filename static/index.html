@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Minetest for the Web</title>
+    <title>Luanti for the Web</title>
   </head>
   <body style="background-color: black">
     <div id="temporary_console" class="console" style="color: white"></div>
@@ -22,7 +22,7 @@
       </select>
 
       <hr>
-      <button id="launch" style="width: 300px; height: 50px; font-size: 20pt;">Launch Minetest</button>
+      <button id="launch" style="width: 300px; height: 50px; font-size: 20pt;">Launch Luanti</button>
       <br/>
       <hr>
       <b style="font-size: 20pt;">Run Server In Browser</b>
@@ -143,7 +143,7 @@
                   alert("Invalid response from proxy");
                   return;
               }
-              const args = new MinetestArgs();
+              const args = new LuantiArgs();
               args.extra.push('--withserver');
               args.gameid = game;
               args.name = username;
@@ -168,7 +168,7 @@
               mtl.setProxy(proxies[join_proxy][0]);
               mtl.addPack(join_game);
 
-              const args = new MinetestArgs();
+              const args = new LuantiArgs();
               args.gameid = join_game;
               args.name = username;
               args.address = '172.16.0.1';
@@ -224,11 +224,11 @@
           join_proxy = peek_params.get("proxy");
       }
 
-      const args = MinetestArgs.fromQueryString(window.location.search);
-      tcon_print("", "Minetest Arguments: " + JSON.stringify(args.toArray(), null, '    '));
+      const args = LuantiArgs.fromQueryString(window.location.search);
+      tcon_print("", "Luanti Arguments: " + JSON.stringify(args.toArray(), null, '    '));
       tcon_print("", "Data Packs: " + JSON.stringify(args.packs, null, '    '));
 
-      const mtl = new MinetestLauncher();
+      const mtl = new LuantiLauncher();
       mtl.addPacks(args.packs);
       mtl.onprint = (text) => {
           tcon_print("", text);

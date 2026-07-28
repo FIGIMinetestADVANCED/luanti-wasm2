@@ -2,7 +2,7 @@
 
 # Build virtual file system
 #
-# The files minetest needs to function correctly.
+# The files luanti needs to function correctly.
 #
 # Shaders, fonts, games, etc
 
@@ -12,11 +12,11 @@ pushd "$BUILD_DIR"
 
 rm -rf fsroot
 mkdir fsroot
-cp -a "minetest-install" fsroot/minetest
+cp -a "luanti-install" fsroot/luanti
 
 
 #############################################
-pushd fsroot/minetest
+pushd fsroot/luanti
 
 rm -rf bin unix
 # Emscripten strips empty directories. But bin/ needs to be present so that

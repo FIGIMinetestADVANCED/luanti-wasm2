@@ -225,11 +225,11 @@ function loadWasm() {
 }
 
 function callMain() {
-    const fullargs = [ './minetest', ...mtLauncher.args.toArray() ];
+    const fullargs = [ './luanti', ...mtLauncher.args.toArray() ];
     const [argc, argv] = makeArgv(fullargs);
     emloop_invoke_main(argc, argv);
     // Pausing and unpausing here gives the browser time to redraw the DOM
-    // before Minetest freezes the main thread generating the world. If this
+    // before Luanti freezes the main thread generating the world. If this
     // is not done, the page will stay frozen for several seconds
     emloop_request_animation_frame();
     mtScheduler.setCondition("main_called");
@@ -240,7 +240,7 @@ var emloop_unpause;
 var emloop_init_sound;
 var emloop_invoke_main;
 var emloop_install_pack;
-var emloop_set_minetest_conf;
+var emloop_set_conf;
 var irrlicht_want_pointerlock;
 var irrlicht_force_pointerlock;
 var irrlicht_resize;
@@ -255,7 +255,7 @@ function emloop_ready() {
     emloop_init_sound = cwrap("emloop_init_sound", null, []);
     emloop_invoke_main = cwrap("emloop_invoke_main", null, ["number", "number"]);
     emloop_install_pack = cwrap("emloop_install_pack", null, ["number", "number", "number"]);
-    emloop_set_minetest_conf = cwrap("emloop_set_minetest_conf", null, ["number"]);
+    emloop_set_conf = cwrap("emloop_set_conf", null, ["number"]);
     irrlicht_want_pointerlock = cwrap("irrlicht_want_pointerlock", "number");
     irrlicht_force_pointerlock = cwrap("irrlicht_force_pointerlock", null);
     irrlicht_resize = cwrap("irrlicht_resize", null, ["number", "number"]);
@@ -469,7 +469,7 @@ function setupResizeHandlers() {
     });
 }
 
-class MinetestArgs {
+class LuantiArgs {
     constructor() {
         this.go = false;
         this.server = false;
@@ -520,7 +520,7 @@ class MinetestArgs {
     }
 
     static fromQueryString(qs) {
-        const r = new MinetestArgs();
+        const r = new LuantiArgs();
         const params = new URLSearchParams(qs);
         if (params.has('go')) r.go = true;
         if (params.has('server')) r.server = true;
@@ -546,7 +546,7 @@ class MinetestArgs {
     }
 }
 
-class MinetestLauncher {
+class LuantiLauncher {
     constructor() {
         if (mtLauncher !== null) {
             throw new Error("There can be only one launcher");
@@ -561,10 +561,10 @@ class MinetestLauncher {
         this.vpn = null;
         this.serverCode = null;
         this.clientCode = null;
-        this.proxyUrl = "wss://minetest.dustlabs.io/proxy";
+        this.proxyUrl = "wss://luanti.dustlabs.io/proxy";
         this.packsDir = DEFAULT_PACKS_DIR;
         this.packsDirIsCors = false;
-        this.minetestConf = new Map();
+        this.conf = new Map();
 
         mtScheduler.addCondition("wasmReady", loadWasm);
         mtScheduler.addCondition("launch_called");
@@ -607,12 +607,12 @@ class MinetestLauncher {
     setConf(key, value) {
         key = key.toString();
         value = value.toString();
-        this.minetestConf.set(key, value);
+        this.conf.set(key, value);
     }
 
-    #renderMinetestConf() {
+    #renderConf() {
         let lines = [];
-        for (const [k, v] of this.minetestConf.entries()) {
+        for (const [k, v] of this.conf.entries()) {
             lines.push(`${k} = ${v}\n`);
         }
         return lines.join('');
@@ -717,7 +717,7 @@ class MinetestLauncher {
         mtScheduler.setCondition(fetchedCond);
     }
 
-    // Launch minetest.exe <args>
+    // Launch luanti.exe <args>
     //
     // This must be called from a keyboard or mouse event handler,
     // after the 'onready' event has fired. (For this reason, it cannot
@@ -726,8 +726,8 @@ class MinetestLauncher {
         if (!this.isReady()) {
             throw new Error("launch called before onready");
         }
-        if (!(args instanceof MinetestArgs)) {
-            throw new Error("launch called without MinetestArgs");
+        if (!(args instanceof LuantiArgs)) {
+            throw new Error("launch called without LuantiArgs");
         }
         if (mtScheduler.isSet("launch_called")) {
             throw new Error("launch called twice");
@@ -739,11 +739,11 @@ class MinetestLauncher {
         this.addPacks(this.args.packs);
         activateBody();
         fixGeometry();
-        if (this.minetestConf.size > 0) {
-            const contents = this.#renderMinetestConf();
+        if (this.conf.size > 0) {
+            const contents = this.#renderConf();
             console.log("minetest.conf is: ", contents);
             const confBuf = stringToNewUTF8(contents);
-            emloop_set_minetest_conf(confBuf);
+            emloop_set_conf(confBuf);
             _free(confBuf);
         }
         emloop_init_sound();

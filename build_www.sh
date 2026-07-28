@@ -4,7 +4,7 @@ source common.sh
 
 # Generate a random hash for this release
 # This is used as a prefix for cache invalidation
-SEEDFILE="/tmp/minetest_build_uuid_seed"
+SEEDFILE="/tmp/luanti_build_uuid_seed"
 dd status=none if=/dev/urandom bs=64 count=1 > "$SEEDFILE"
 md5sum -b "$SEEDFILE" > "$SEEDFILE".hash
 RELEASE_UUID=`cut -b -12 "$SEEDFILE".hash`
@@ -22,7 +22,7 @@ mkdir "$RELEASE_DIR"
 mkdir "$PACKS_DIR"
 
 # Copy emscripten generated files
-pushd "$BUILD_DIR/minetest/bin"
+pushd "$BUILD_DIR/luanti/bin"
 EMSCRIPTEN_FILES="luanti.js luanti.wasm"
 for I in $EMSCRIPTEN_FILES; do
   cp "$I" "$RELEASE_DIR"

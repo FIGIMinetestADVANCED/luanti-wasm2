@@ -6,10 +6,10 @@ INCREMENTAL=${INCREMENTAL:-false}
 
 pushd "$BUILD_DIR"
 if ! $INCREMENTAL; then
-  rm -rf minetest
+  rm -rf luanti
 fi
-mkdir -p minetest
-pushd minetest
+mkdir -p luanti
+pushd luanti
 
 export EMSDK_EXTRA="-sUSE_SDL=2"
 export CFLAGS="$CFLAGS $EMSDK_EXTRA"
@@ -34,7 +34,7 @@ if ! $INCREMENTAL; then
       -DRUN_IN_PLACE=TRUE \
       -DENABLE_GLES=TRUE \
       -DENABLE_UPDATE_CHECKER=0 \
-      -DCMAKE_BUILD_TYPE="$MINETEST_BUILD_TYPE" \
+      -DCMAKE_BUILD_TYPE="$LUANTI_BUILD_TYPE" \
       -DZLIB_INCLUDE_DIR="$INSTALL_DIR/include" \
       -DZLIB_LIBRARY="$INSTALL_DIR/lib/libz.a" \
       -DJPEG_INCLUDE_DIR="$INSTALL_DIR/include" \
@@ -58,10 +58,10 @@ if ! $INCREMENTAL; then
       -DEGL_INCLUDE_DIR="$DUMMY_INCLUDE_DIR" \
       -DCURL_LIBRARY="$INSTALL_DIR/lib/libcurl.a" \
       -DCURL_INCLUDE_DIR="$INSTALL_DIR/include" \
-      -DCMAKE_INSTALL_PREFIX="$BUILD_DIR/minetest-install" \
+      -DCMAKE_INSTALL_PREFIX="$BUILD_DIR/luanti-install" \
       -G "Unix Makefiles" \
-      "$SOURCES_DIR/minetest"
+      "$SOURCES_DIR/luanti"
 fi
 
-rm -rf "$BUILD_DIR/minetest-install"
+rm -rf "$BUILD_DIR/luanti-install"
 emmake make install

@@ -1,7 +1,7 @@
-Minetest-wasm
+Luanti-wasm
 =============
 
-This is an experimental port of Minetest to the web using emscripten/WebAssembly.
+This is an experimental port of Luanti to the web using emscripten/WebAssembly.
 
 
 System Requirements
@@ -13,7 +13,7 @@ This has only been tested on Ubuntu 20.04.
 Building
 ---------
 
-    cd minetest-wasm
+    cd luanti-wasm
     ./build_all.sh
 
 Installation
@@ -27,7 +27,7 @@ another way.
 Network Play
 ------------
 
-By default, the proxy server is set to `wss://minetest.dustlabs.io/proxy` (see static/launcher.js).
+By default, the proxy server is set to `wss://luanti.dustlabs.io/proxy` (see static/launcher.js).
 This is necessary for network play, since websites cannot open normal TCP/UDP sockets. This proxy
 is located in California. There are regional proxies which may perform better depending on your
 location:

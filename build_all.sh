@@ -25,8 +25,8 @@ emcc --clear-cache --clear-ports
 ./build_openssl.sh
 ./build_curl.sh      # uses webshims, openssl, zlib
 
-# Minetest
-./build_minetest.sh
+# Luanti
+./build_luanti.sh
 
 # Virtual file system
 ./build_fsroot.sh
