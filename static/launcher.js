@@ -413,6 +413,10 @@ function setupResizeHandlers() {
     document.addEventListener('keydown', (e) => {
         // Allow F11 to go full screen
         if (e.code == "F11") {
+            // Prevent F11 from propagating, since that is also Luanti's full screen key.
+            // If Launti tries to switch to full screen, it messes up the canvas.
+            e.stopPropagation();
+
             // On Firefox, F11 is animated. The window smoothly grows to
             // full screen over several seconds. During this transition, the 'resize'
             // event is triggered hundreds of times. To prevent flickering, have
@@ -422,6 +426,12 @@ function setupResizeHandlers() {
             for (var delay = 100; delay <= 2600; delay += 500) {
                 setTimeout(() => { fixGeometry(true); }, delay);
             }
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code == "F11") {
+            e.stopPropagation();
         }
     });
 }
