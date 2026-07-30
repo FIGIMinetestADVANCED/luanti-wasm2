@@ -129,6 +129,7 @@ function activateBody() {
     canvasContainer.appendChild(mtCanvas);
 
     setupResizeHandlers();
+    setupEscapeHandlers();
 
     consoleButton = document.getElementById('console_button');
     consoleOutput = document.getElementById('console_output');
@@ -234,8 +235,6 @@ function callMain() {
 var emloop_install_pack;
 var emloop_set_conf;
 var emloop_invoke_main;
-var irrlicht_want_pointerlock;
-var irrlicht_force_pointerlock;
 var irrlicht_resize;
 var emsocket_init;
 var emsocket_set_proxy;
@@ -246,8 +245,6 @@ function emloop_ready() {
     emloop_install_pack = cwrap("emloop_install_pack", null, ["number", "number", "number"]);
     emloop_set_conf = cwrap("emloop_set_conf", null, ["number"]);
     emloop_invoke_main = cwrap("emloop_invoke_main", null, ["number", "number"]);
-    irrlicht_want_pointerlock = cwrap("irrlicht_want_pointerlock", "number");
-    irrlicht_force_pointerlock = cwrap("irrlicht_force_pointerlock", null);
     irrlicht_resize = cwrap("irrlicht_resize", null, ["number", "number"]);
     emsocket_init = cwrap("emsocket_init", null, []);
     emsocket_set_proxy = cwrap("emsocket_set_proxy", null, ["number"]);
@@ -427,6 +424,71 @@ function setupResizeHandlers() {
             }
         }
     });
+}
+
+// While the pointer is locked, the browser keeps ESC for itself: it releases
+// the lock and never delivers the keydown to the page. Luanti therefore misses
+// the keypress that is supposed to open the in-game menu, and the player has to
+// press ESC a second time (which does work, because by then the pointer is no
+// longer locked).
+//
+// Fix that by treating an unlock that the game did not ask for as the ESC press
+// that was swallowed. The synthetic event goes to the same window listener SDL
+// installs, so it travels the normal input path.
+const ESC_DEDUPE_MS = 250;
+
+// Timestamps used to keep the real and the synthetic ESC from both getting
+// through on browsers that do deliver the keydown. Otherwise the menu would
+// open and immediately close again.
+var pointerlockExitTime = 0; // last exitPointerLock() by the wasm module
+var realEscapeTime = 0;      // last ESC keydown delivered by the browser
+var fakeEscapeTime = 0;      // last ESC keydown synthesized here
+
+function setupEscapeHandlers() {
+    // Remember unlocks the game asked for (emscripten_exit_pointerlock calls
+    // this), so they can be told apart from the user pressing ESC.
+    const exitPointerLock = document.exitPointerLock.bind(document);
+    document.exitPointerLock = () => {
+        if (document.pointerLockElement) {
+            pointerlockExitTime = now();
+        }
+        exitPointerLock();
+    };
+
+    // Capture phase, and registered before the wasm module installs its own
+    // handlers, so this runs first and can swallow the event if needed.
+    window.addEventListener('keydown', (e) => {
+        if (e.code != 'Escape' || !e.isTrusted) return;
+        realEscapeTime = now();
+        if (realEscapeTime - fakeEscapeTime < ESC_DEDUPE_MS) {
+            // Luanti already got a synthetic ESC for this unlock.
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }
+    }, true);
+
+    document.addEventListener('pointerlockchange', () => {
+        if (document.pointerLockElement) return;
+        if (now() - pointerlockExitTime < ESC_DEDUPE_MS) return; // game asked for it
+        if (now() - realEscapeTime < ESC_DEDUPE_MS) return; // keydown got through
+        sendEscapeKey();
+    });
+}
+
+function sendEscapeKey() {
+    fakeEscapeTime = now();
+    const init = {
+        key: 'Escape',
+        code: 'Escape',
+        keyCode: 27,
+        which: 27,
+        bubbles: true,
+        cancelable: true,
+    };
+    window.dispatchEvent(new KeyboardEvent('keydown', init));
+    setTimeout(() => {
+        window.dispatchEvent(new KeyboardEvent('keyup', init));
+    }, 30);
 }
 
 class LuantiArgs {
