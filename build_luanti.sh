@@ -12,7 +12,9 @@ mkdir -p luanti
 pushd luanti
 
 export EMSDK_PORTS="--use-port=zlib --use-port=libjpeg --use-port=libpng --use-port=freetype --use-port=ogg --use-port=vorbis --use-port=sqlite3"
-export EMSDK_EXTRA="-sUSE_SDL=2 $EMSDK_PORTS"
+export EMSDK_CANVAS="-sPROXY_TO_PTHREAD=1 -sOFFSCREENCANVAS_SUPPORT=1 -sJSPI"
+export EMSDK_MODULE="-sINCOMING_MODULE_JS_API=mainScriptUrlOrBlob,canvas,monitorRunDependencies,preRun,postRun,print,printErr,setStatus,onFullScreen"
+export EMSDK_EXTRA="-sUSE_SDL=2 $EMSDK_PORTS $EMSDK_CANVAS $EMSDK_MODULE"
 export CFLAGS="$CFLAGS $EMSDK_EXTRA"
 export CXXFLAGS="$CXXFLAGS $EMSDK_EXTRA"
 export LDFLAGS="$LDFLAGS $EMSDK_EXTRA -sPTHREAD_POOL_SIZE=20 -s EXPORTED_RUNTIME_METHODS=ccall,cwrap -s INITIAL_MEMORY=2013265920 -sMIN_WEBGL_VERSION=2 -sUSE_WEBGL2 -sWASMFS=1"
@@ -35,7 +37,8 @@ if ! $INCREMENTAL; then
       -DRUN_IN_PLACE=TRUE \
       -DENABLE_GLES=TRUE \
       -DENABLE_UPDATE_CHECKER=0 \
-      -DPNG_LIBRARY="-lpng-mt" \
+      -DFREETYPE_LIBRARY="$DUMMY_OBJECT" \
+      -DPNG_LIBRARY="$DUMMY_OBJECT" \
       -DVORBISFILE_LIBRARY="$DUMMY_OBJECT" \
       -DSQLITE3_LIBRARY="$DUMMY_OBJECT" \
       -DCMAKE_BUILD_TYPE="$LUANTI_BUILD_TYPE" \

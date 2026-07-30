@@ -1,0 +1,211 @@
+--- emsdk-orig/upstream/emscripten/src/lib/libegl.js	2026-07-23 19:19:44.000000000 -0400
++++ emsdk/upstream/emscripten/src/lib/libegl.js	2026-07-29 03:08:41.338306229 -0400
+@@ -99,7 +99,7 @@
+   },
+ 
+   // EGLAPI EGLDisplay EGLAPIENTRY eglGetDisplay(EGLNativeDisplayType display_id);
+-  eglGetDisplay__proxy: 'sync',
++  eglGetDisplay__proxy: 'none',
+   eglGetDisplay: (nativeDisplayType) => {
+     EGL.setErrorCode(0x3000 /* EGL_SUCCESS */);
+     // Emscripten EGL implementation "emulates" X11, and eglGetDisplay is
+@@ -112,7 +112,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor);
+-  eglInitialize__proxy: 'sync',
++  eglInitialize__proxy: 'none',
+   eglInitialize: (display, majorVersion, minorVersion) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -130,7 +130,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglTerminate(EGLDisplay dpy);
+-  eglTerminate__proxy: 'sync',
++  eglTerminate__proxy: 'none',
+   eglTerminate: (display) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -145,17 +145,17 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigs(EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+-  eglGetConfigs__proxy: 'sync',
++  eglGetConfigs__proxy: 'none',
+   eglGetConfigs: (display, configs, config_size, numConfigs) =>
+     EGL.chooseConfig(display, 0, configs, config_size, numConfigs),
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglChooseConfig(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+-  eglChooseConfig__proxy: 'sync',
++  eglChooseConfig__proxy: 'none',
+   eglChooseConfig: (display, attrib_list, configs, config_size, numConfigs) =>
+     EGL.chooseConfig(display, attrib_list, configs, config_size, numConfigs),
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglGetConfigAttrib(EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
+-  eglGetConfigAttrib__proxy: 'sync',
++  eglGetConfigAttrib__proxy: 'none',
+   eglGetConfigAttrib: (display, config, attribute, value) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -272,7 +272,7 @@
+   },
+ 
+   // EGLAPI EGLSurface EGLAPIENTRY eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config, EGLNativeWindowType win, const EGLint *attrib_list);
+-  eglCreateWindowSurface__proxy: 'sync',
++  eglCreateWindowSurface__proxy: 'none',
+   eglCreateWindowSurface: (display, config, win, attrib_list) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -291,7 +291,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglDestroySurface(EGLDisplay display, EGLSurface surface);
+-  eglDestroySurface__proxy: 'sync',
++  eglDestroySurface__proxy: 'none',
+   eglDestroySurface: (display, surface) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -314,7 +314,7 @@
+   eglCreateContext__deps: ['$GL'],
+ 
+   // EGLAPI EGLContext EGLAPIENTRY eglCreateContext(EGLDisplay dpy, EGLConfig config, EGLContext share_context, const EGLint *attrib_list);
+-  eglCreateContext__proxy: 'sync',
++  eglCreateContext__proxy: 'none',
+   eglCreateContext: (display, config, hmm, contextAttribs) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -378,7 +378,7 @@
+   eglDestroyContext__deps: ['$GL'],
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglDestroyContext(EGLDisplay dpy, EGLContext context);
+-  eglDestroyContext__proxy: 'sync',
++  eglDestroyContext__proxy: 'none',
+   eglDestroyContext: (display, context) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -398,7 +398,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglQuerySurface(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value);
+-  eglQuerySurface__proxy: 'sync',
++  eglQuerySurface__proxy: 'none',
+   eglQuerySurface: (display, surface, attribute, value) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -464,7 +464,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglQueryContext(EGLDisplay dpy, EGLContext ctx, EGLint attribute, EGLint *value);
+-  eglQueryContext__proxy: 'sync',
++  eglQueryContext__proxy: 'none',
+   eglQueryContext: (display, context, attribute, value) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -503,14 +503,14 @@
+   },
+ 
+   // EGLAPI EGLint EGLAPIENTRY eglGetError(void);
+-  eglGetError__proxy: 'sync',
++  eglGetError__proxy: 'none',
+   eglGetError: () => EGL.errorCode,
+ 
+   // EGLAPI const char * EGLAPIENTRY eglQueryString(EGLDisplay dpy, EGLint name);
+   // The allocated strings are cached and never freed.
+   eglQueryString__noleakcheck: true,
+   eglQueryString__deps: ['$stringToNewUTF8'],
+-  eglQueryString__proxy: 'sync',
++  eglQueryString__proxy: 'none',
+   eglQueryString: (display, name) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -534,7 +534,7 @@
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglBindAPI(EGLenum api);
+-  eglBindAPI__proxy: 'sync',
++  eglBindAPI__proxy: 'none',
+   eglBindAPI: (api) => {
+     if (api == 0x30A0 /* EGL_OPENGL_ES_API */) {
+       EGL.setErrorCode(0x3000 /* EGL_SUCCESS */);
+@@ -546,21 +546,21 @@
+   },
+ 
+   // EGLAPI EGLenum EGLAPIENTRY eglQueryAPI(void);
+-  eglQueryAPI__proxy: 'sync',
++  eglQueryAPI__proxy: 'none',
+   eglQueryAPI: () => {
+     EGL.setErrorCode(0x3000 /* EGL_SUCCESS */);
+     return 0x30A0; // EGL_OPENGL_ES_API
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglWaitClient(void);
+-  eglWaitClient__proxy: 'sync',
++  eglWaitClient__proxy: 'none',
+   eglWaitClient: () => {
+     EGL.setErrorCode(0x3000 /* EGL_SUCCESS */);
+     return 1;
+   },
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglWaitNative(EGLint engine);
+-  eglWaitNative__proxy: 'sync',
++  eglWaitNative__proxy: 'none',
+   eglWaitNative: (nativeEngineId) => {
+     EGL.setErrorCode(0x3000 /* EGL_SUCCESS */);
+     return 1;
+@@ -572,7 +572,7 @@
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglSwapInterval(EGLDisplay dpy, EGLint interval);
+   eglSwapInterval__deps: ['emscripten_set_main_loop_timing'],
+-  eglSwapInterval__proxy: 'sync',
++  eglSwapInterval__proxy: 'none',
+   eglSwapInterval: (display, interval) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -587,7 +587,7 @@
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
+   eglMakeCurrent__deps: ['$GL'],
+-  eglMakeCurrent__proxy: 'sync',
++  eglMakeCurrent__proxy: 'none',
+   eglMakeCurrent: (display, draw, read, context) => {
+     if (display != {{{ eglDefaultDisplay }}}) {
+       EGL.setErrorCode(0x3008 /* EGL_BAD_DISPLAY */);
+@@ -613,11 +613,11 @@
+   },
+ 
+   // EGLAPI EGLContext EGLAPIENTRY eglGetCurrentContext(void);
+-  eglGetCurrentContext__proxy: 'sync',
++  eglGetCurrentContext__proxy: 'none',
+   eglGetCurrentContext: () => EGL.currentContext,
+ 
+   // EGLAPI EGLSurface EGLAPIENTRY eglGetCurrentSurface(EGLint readdraw);
+-  eglGetCurrentSurface__proxy: 'sync',
++  eglGetCurrentSurface__proxy: 'none',
+   eglGetCurrentSurface: (readdraw) => {
+     if (readdraw == 0x305A /* EGL_READ */) {
+       return EGL.currentReadSurface;
+@@ -630,12 +630,12 @@
+   },
+ 
+   // EGLAPI EGLDisplay EGLAPIENTRY eglGetCurrentDisplay(void);
+-  eglGetCurrentDisplay__proxy: 'sync',
++  eglGetCurrentDisplay__proxy: 'none',
+   eglGetCurrentDisplay: () => EGL.currentContext ? {{{ eglDefaultDisplay }}} : 0,
+ 
+   // EGLAPI EGLBoolean EGLAPIENTRY eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
+   eglSwapBuffers__deps: ['$GLctx'],
+-  eglSwapBuffers__proxy: 'sync',
++  eglSwapBuffers__proxy: 'none',
+   eglSwapBuffers: (dpy, surface) => {
+     if (!EGL.defaultDisplayInitialized) {
+       EGL.setErrorCode(0x3001 /* EGL_NOT_INITIALIZED */);
+@@ -654,7 +654,7 @@
+     return 0 /* EGL_FALSE */;
+   },
+ 
+-  eglReleaseThread__proxy: 'sync',
++  eglReleaseThread__proxy: 'none',
+   eglReleaseThread: () => {
+     // Equivalent to eglMakeCurrent with EGL_NO_CONTEXT and EGL_NO_SURFACE.
+     EGL.currentContext = 0;

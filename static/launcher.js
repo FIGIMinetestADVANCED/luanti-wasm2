@@ -228,19 +228,12 @@ function callMain() {
     const fullargs = [ './luanti', ...mtLauncher.args.toArray() ];
     const [argc, argv] = makeArgv(fullargs);
     emloop_invoke_main(argc, argv);
-    // Pausing and unpausing here gives the browser time to redraw the DOM
-    // before Luanti freezes the main thread generating the world. If this
-    // is not done, the page will stay frozen for several seconds
-    emloop_request_animation_frame();
     mtScheduler.setCondition("main_called");
 }
 
-var emloop_pause;
-var emloop_unpause;
-var emloop_init_sound;
-var emloop_invoke_main;
 var emloop_install_pack;
 var emloop_set_conf;
+var emloop_invoke_main;
 var irrlicht_want_pointerlock;
 var irrlicht_force_pointerlock;
 var irrlicht_resize;
@@ -250,12 +243,9 @@ var emsocket_set_vpn;
 
 // Called when the wasm module is ready
 function emloop_ready() {
-    emloop_pause = cwrap("emloop_pause", null, []);
-    emloop_unpause = cwrap("emloop_unpause", null, []);
-    emloop_init_sound = cwrap("emloop_init_sound", null, []);
-    emloop_invoke_main = cwrap("emloop_invoke_main", null, ["number", "number"]);
     emloop_install_pack = cwrap("emloop_install_pack", null, ["number", "number", "number"]);
     emloop_set_conf = cwrap("emloop_set_conf", null, ["number"]);
+    emloop_invoke_main = cwrap("emloop_invoke_main", null, ["number", "number"]);
     irrlicht_want_pointerlock = cwrap("irrlicht_want_pointerlock", "number");
     irrlicht_force_pointerlock = cwrap("irrlicht_force_pointerlock", null);
     irrlicht_resize = cwrap("irrlicht_resize", null, ["number", "number"]);
@@ -263,12 +253,6 @@ function emloop_ready() {
     emsocket_set_proxy = cwrap("emsocket_set_proxy", null, ["number"]);
     emsocket_set_vpn = cwrap("emsocket_set_vpn", null, ["number"]);
     mtScheduler.setCondition("wasmReady");
-}
-
-// Called when the wasm module wants to force redraw before next frame
-function emloop_request_animation_frame() {
-    emloop_pause();
-    window.requestAnimationFrame(() => { emloop_unpause(); });
 }
 
 function makeArgv(args) {
@@ -320,14 +304,7 @@ var Module = {
     preRun: [],
     postRun: [],
     print: consolePrint,
-    canvas: (function() {
-        // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-        // application robust, you may want to override this behavior before shipping!
-        // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-        mtCanvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
-
-        return mtCanvas;
-    })(),
+    canvas: mtCanvas,
     setStatus: function(text) {
         if (text) Module.print('[wasm module status] ' + text);
     },
@@ -350,15 +327,6 @@ window.onerror = function(event) {
 };
 
 function resizeCanvas(width, height) {
-    const canvas = mtCanvas;
-    if (canvas.width != width || canvas.height != height) {
-        canvas.width = width;
-        canvas.height = height;
-        canvas.widthNative = width;
-        canvas.heightNative = height;
-    }
-    // Trigger SDL window resize.
-    // This should happen automatically, not sure why it doesn't.
     irrlicht_resize(width, height);
 }
 
@@ -422,30 +390,22 @@ function fixGeometry(override) {
     // Native canvas resolution
     var resX;
     var resY;
-    var scale = false;
+    var dpr = window.devicePixelRatio || 1;
     if (resolution == 'high') {
-        resX = realX;
-        resY = realY;
+        resX = Math.floor(dpr * realX);
+        resY = Math.floor(dpr * realY);
     } else if (resolution == 'medium') {
-        resX = Math.floor(realX / 1.5);
-        resY = Math.floor(realY / 1.5);
-        scale = true;
+        resX = Math.floor(dpr * realX / 1.5);
+        resY = Math.floor(dpr * realY / 1.5);
     } else {
-        resX = Math.floor(realX / 2.0);
-        resY = Math.floor(realY / 2.0);
-        scale = true;
+        resX = Math.floor(dpr * realX / 2.0);
+        resY = Math.floor(dpr * realY / 2.0);
     }
+    var styleWidth = realX + "px";
+    var styleHeight = realY + "px";
+    canvas.style.setProperty("width", styleWidth, "important");
+    canvas.style.setProperty("height", styleHeight, "important");
     resizeCanvas(resX, resY);
-
-    if (scale) {
-        var styleWidth = realX + "px";
-        var styleHeight = realY + "px";
-        canvas.style.setProperty("width", styleWidth, "important");
-        canvas.style.setProperty("height", styleHeight, "important");
-    } else {
-        canvas.style.removeProperty("width");
-        canvas.style.removeProperty("height");
-    }
 }
 
 function setupResizeHandlers() {
@@ -746,7 +706,6 @@ class LuantiLauncher {
             emloop_set_conf(confBuf);
             _free(confBuf);
         }
-        emloop_init_sound();
         // Setup emsocket
         // TODO: emsocket should export the helpers for this
         emsocket_init();

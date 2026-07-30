@@ -5,37 +5,24 @@ cd "$BASE_DIR"
 export BUILD_KIND="${BUILD_KIND:-release}"
 
 # Setup emscripten (if not already)
-export EMSDK="${EMSDK:-use_local_install}"
-if [ "$EMSDK" == "use_local_install" ]; then
-    if [ ! -d emsdk ]; then
-        set +x
-        echo "-------------------------------------------------------"
-        echo "Emscripten is not installed. (EMSDK not set)"
-        echo "Press ENTER to install it into emsdk/. Ctrl-C to abort."
-        echo "-------------------------------------------------------"
-        read unused_var
-        if [ "$unused_var" != "" ]; then
-            echo "Aborting"
-            exit 1
-        fi
-        set -x
-        ./install_emsdk.sh
-    fi
-    pushd emsdk
-    source ./emsdk_env.sh
-    popd
+if [ ! -d emsdk ]; then
+    ./install_emsdk.sh
 fi
+
+pushd emsdk
+source ./emsdk_env.sh
+popd
 
 case $BUILD_KIND in
   debug)
     export LUANTI_BUILD_TYPE="Debug"
-    export COMMON_CFLAGS="-O0 -g -gsource-map"
+    export COMMON_CFLAGS="-O0 -g2 -gsource-map"
     export COMMON_LDFLAGS="-sSAFE_HEAP=1 -sASSERTIONS=2"
     export BUILD_SUFFIX="-debug"
     ;;
   profile)
     export LUANTI_BUILD_TYPE="Release"
-    export COMMON_CFLAGS="--profiling -O2 -g -gsource-map"
+    export COMMON_CFLAGS="--profiling -O2 -g2 -gsource-map"
     export COMMON_LDFLAGS=""
     export BUILD_SUFFIX="-profile"
     ;;
@@ -58,9 +45,9 @@ mkdir -p "$SOURCES_DIR" "$BUILD_DIR" "$INSTALL_DIR"
 
 export MAKEFLAGS="-j$(nproc)"
 
-export CFLAGS="$COMMON_CFLAGS -pthread -sUSE_PTHREADS=1 -fexceptions"
-export CXXFLAGS="$COMMON_CFLAGS -pthread -sUSE_PTHREADS=1 -fexceptions"
-export LDFLAGS="$COMMON_LDFLAGS -pthread -sUSE_PTHREADS=1 -fexceptions"
+export CFLAGS="$COMMON_CFLAGS -pthread -fwasm-exceptions -sJSPI"
+export CXXFLAGS="$COMMON_CFLAGS -pthread -fwasm-exceptions -sJSPI"
+export LDFLAGS="$COMMON_LDFLAGS -pthread -fwasm-exceptions -sJSPI"
 
 export EMSDK_ROOT="$EMSDK"
 export EMSDK_SYSLIB="${EMSDK_ROOT}/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten"

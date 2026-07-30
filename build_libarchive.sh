@@ -6,8 +6,8 @@ unpack_source libarchive
 
 pushd "$BUILD_DIR/libarchive"
 
-export CPPFLAGS="-I${INSTALL_DIR}/include"
-export LDFLAGS="-L${INSTALL_DIR}/lib"
+export CPPFLAGS="${CPPFLAGS-} -I${INSTALL_DIR}/include"
+export LDFLAGS="$LDFLAGS -L${INSTALL_DIR}/lib"
 emconfigure ./configure \
   --enable-static \
   --disable-shared \

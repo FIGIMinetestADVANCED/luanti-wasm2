@@ -32,7 +32,7 @@ done
 # is located (see emcc --source-map-base) apparently cannot be
 # relative to the .wasm file.
 if [ -f luanti.wasm.map ]; then
-  cp luanti.wasm.map "$WWW_DIR"
+  cp luanti.wasm.map "$RELEASE_DIR"
 fi
 
 popd

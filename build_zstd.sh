@@ -11,8 +11,8 @@ pushd zstd-build
 # makefile can't handle parallelism
 export MAKEFLAGS=""
 
-export CFLAGS="-D_POSIX_SOURCE=1"
-export CXXFLAGS="-D_POSIX_SOURCE=1"
+export CFLAGS="$CFLAGS -D_POSIX_SOURCE=1"
+export CXXFLAGS="$CXXFLAGS -D_POSIX_SOURCE=1"
 emcmake cmake \
   -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
   "$SOURCES_DIR/zstd/build/cmake"

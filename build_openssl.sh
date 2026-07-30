@@ -10,9 +10,9 @@ pushd "$BUILD_DIR/openssl"
 
 patch -p1 < "$BASE_DIR"/openssl.patch
 
-export CFLAGS="-I${INSTALL_DIR}/include -DPEDANTIC"
-export CXXFLAGS="$CFLAGS"
-export LDFLAGS="-L${INSTALL_DIR}/lib -lemsocket"
+export CFLAGS="$CFLAGS -I${INSTALL_DIR}/include -DPEDANTIC"
+export CXXFLAGS="$CXXFLAGS -I${INSTALL_DIR}/include -DPEDANTIC"
+export LDFLAGS="$LDFLAGS -L${INSTALL_DIR}/lib -lemsocket"
 
 emconfigure ./Configure linux-generic64 \
   no-asm \
