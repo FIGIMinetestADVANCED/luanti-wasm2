@@ -24,4 +24,4 @@ getrepo minetest_game "https://github.com/luanti-org/minetest_game.git" 052ccb09
 
 # These repos are part of the fork
 getrepo webshims "https://github.com/paradust7/webshims.git" 0767fdedd87f61a28a34f6444b669caf563a9fd5
-getrepo luanti "https://github.com/paradust7/luanti.git" 132c5ac52bb66d5f358320b9ab0cdb00891ff1ff
+getrepo luanti "https://github.com/paradust7/luanti.git" 56e45fa4e7c02c7f17fd9b5d6e1dcf145c543220
