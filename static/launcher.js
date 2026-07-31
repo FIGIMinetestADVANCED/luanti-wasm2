@@ -426,7 +426,9 @@ function setupResizeHandlers() {
             for (var delay = 100; delay <= 2600; delay += 500) {
                 setTimeout(() => { fixGeometry(true); }, delay);
             }
+            return;
         }
+        ignoreBrowserKeys(e);
     });
 
     document.addEventListener('keyup', (e) => {
@@ -434,6 +436,18 @@ function setupResizeHandlers() {
             e.stopPropagation();
         }
     });
+}
+
+const BROWSER_IGNORE_KEYS = new Set([
+    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F12",
+    "Tab", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+]);
+
+// Prevent the browser from acting on these keys.
+function ignoreBrowserKeys(e) {
+    if (BROWSER_IGNORE_KEYS.has(e.code)) {
+        e.preventDefault();
+    }
 }
 
 // While the pointer is locked, the browser keeps ESC for itself: it releases
@@ -483,6 +497,9 @@ function setupEscapeHandlers() {
         if (now() - realEscapeTime < ESC_DEDUPE_MS) return; // keydown got through
         sendEscapeKey();
     });
+
+    // Force confirmation before leaving page
+    window.addEventListener('beforeunload', (e) => { e.preventDefault(); });
 }
 
 function sendEscapeKey() {
