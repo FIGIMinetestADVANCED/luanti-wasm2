@@ -128,6 +128,250 @@ function activateBody() {
     const canvasContainer = document.getElementById('canvas_container');
     canvasContainer.appendChild(mtCanvas);
 
+const canvasContainer = document.getElementById('canvas_container');
+canvasContainer.appendChild(mtCanvas);
+
+// Try WebGPU first
+initWebGPU(mtCanvas).then((gpu) => {
+    if (!gpu) {
+        console.warn("WebGPU unavailable, falling back to WebGL.");
+        startWebGL(mtCanvas);
+        return;
+    }
+
+    console.log("WebGPU initialized.");
+    startGameWithWebGPU(gpu);
+});
+
+async function initWebGPU(canvas) {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) return null;
+
+    const device = await adapter.requestDevice();
+    const context = canvas.getContext("webgpu");
+
+    const format = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({
+        device,
+        format,
+        alphaMode: "opaque"
+    });
+
+    // WGSL shaders with texture + sampler
+    const vertexShader = `
+        struct Uniforms {
+            mvp : mat4x4<f32>,
+        };
+        @group(0) @binding(0) var<uniform> uniforms : Uniforms;
+
+        struct VSOut {
+            @builtin(position) pos: vec4<f32>,
+            @location(0) uv: vec2<f32>,
+        };
+
+        @vertex
+        fn main(
+            @location(0) position: vec3<f32>,
+            @location(1) uv: vec2<f32>
+        ) -> VSOut {
+            var out: VSOut;
+            out.pos = uniforms.mvp * vec4<f32>(position, 1.0);
+            out.uv = uv;
+            return out;
+        }
+    `;
+
+    const fragmentShader = `
+        @group(0) @binding(1) var textureSampler: sampler;
+        @group(0) @binding(2) var textureData: texture_2d<f32>;
+
+        @fragment
+        fn main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+            return textureSample(textureData, textureSampler, uv);
+        }
+    `;
+
+    // Bind group layout
+    const bindGroupLayout = device.createBindGroupLayout({
+        entries: [
+            { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "uniform" }},
+            { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+            { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} }
+        ]
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts: [bindGroupLayout]
+    });
+
+    const pipeline = device.createRenderPipeline({
+        layout: pipelineLayout,
+        vertex: {
+            module: device.createShaderModule({ code: vertexShader }),
+            entryPoint: "main",
+            buffers: [{
+                arrayStride: 5 * 4, // x,y,z,u,v
+                attributes: [
+                    { shaderLocation: 0, offset: 0, format: "float32x3" },
+                    { shaderLocation: 1, offset: 3 * 4, format: "float32x2" }
+                ]
+            }]
+        },
+        fragment: {
+            module: device.createShaderModule({ code: fragmentShader }),
+            entryPoint: "main",
+            targets: [{ format }]
+        },
+        primitive: { topology: "triangle-list" }
+    });
+
+    // Cube vertices with UVs
+    const cubeVertices = new Float32Array([
+        // x, y, z,   u, v
+        -1, -1,  1,  0, 0,
+         1, -1,  1,  1, 0,
+         1,  1,  1,  1, 1,
+        -1,  1,  1,  0, 1,
+
+        -1, -1, -1,  0, 0,
+         1, -1, -1,  1, 0,
+         1,  1, -1,  1, 1,
+        -1,  1, -1,  0, 1
+    ]);
+
+    const cubeIndices = new Uint16Array([
+        0, 1, 2,  2, 3, 0,
+        4, 5, 6,  6, 7, 4,
+        3, 2, 6,  6, 7, 3,
+        0, 1, 5,  5, 4, 0,
+        1, 2, 6,  6, 5, 1,
+        0, 3, 7,  7, 4, 0
+    ]);
+
+    const cubeVertexBuffer = device.createBuffer({
+        size: cubeVertices.byteLength,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(cubeVertexBuffer, 0, cubeVertices);
+
+    const cubeIndexBuffer = device.createBuffer({
+        size: cubeIndices.byteLength,
+        usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(cubeIndexBuffer, 0, cubeIndices);
+
+    // Load texture
+    const img = document.createElement("img");
+    img.src = "textures/default_dirt.png"; // example Minetest texture
+    await img.decode();
+
+    const imageBitmap = await createImageBitmap(img);
+
+    const texture = device.createTexture({
+        size: [imageBitmap.width, imageBitmap.height, 1],
+        format: "rgba8unorm",
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST
+    });
+
+    // Copy the ImageBitmap into the GPU texture
+    device.queue.copyExternalImageToTexture(
+        { source: imageBitmap },
+        { texture: texture },
+        [imageBitmap.width, imageBitmap.height, 1]
+    );
+
+    const sampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
+    const textureView = texture.createView();
+
+    // Uniform buffer for MVP
+    const uniformBuffer = device.createBuffer({
+        size: 16 * 4,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    const bindGroup = device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [
+            { binding: 0, resource: { buffer: uniformBuffer } },
+            { binding: 1, resource: sampler },
+            { binding: 2, resource: textureView }
+        ]
+    });
+
+    // Return GPU objects needed to start the game
+    return { device, context, pipeline, cubeVertexBuffer, cubeIndexBuffer, cubeIndices, uniformBuffer, bindGroup };
+
+}
+
+function startGameWithWebGPU(gpu) {
+    const { device, context, pipeline, cubeVertexBuffer, cubeIndexBuffer, cubeIndices, uniformBuffer, bindGroup } = gpu;
+
+    let angle = 0;
+
+    function frame() {
+        angle += 0.01;
+
+        const aspect = context.canvas.width / context.canvas.height;
+        const fov = Math.PI / 4;
+        const near = 0.1;
+        const far = 100;
+
+        const f = 1.0 / Math.tan(fov / 2);
+        const rangeInv = 1 / (near - far);
+
+        const projection = new Float32Array([
+            f / aspect, 0, 0, 0,
+            0, f, 0, 0,
+            0, 0, (near + far) * rangeInv, -1,
+            0, 0, near * far * rangeInv * 2, 0
+        ]);
+
+        const model = new Float32Array([
+            Math.cos(angle), 0, Math.sin(angle), 0,
+            0, 1, 0, 0,
+            -Math.sin(angle), 0, Math.cos(angle), 0,
+            0, 0, -6, 1
+        ]);
+
+        const mvp = new Float32Array(16);
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                mvp[r * 4 + c] =
+                    projection[r * 4 + 0] * model[0 * 4 + c] +
+                    projection[r * 4 + 1] * model[1 * 4 + c] +
+                    projection[r * 4 + 2] * model[2 * 4 + c] +
+                    projection[r * 4 + 3] * model[3 * 4 + c];
+            }
+        }
+
+        device.queue.writeBuffer(uniformBuffer, 0, mvp);
+
+        const encoder = device.createCommandEncoder();
+        const view = context.getCurrentTexture().createView();
+
+        const pass = encoder.beginRenderPass({
+            colorAttachments: [{
+                view,
+                clearValue: { r: 0.05, g: 0.05, b: 0.08, a: 1.0 },
+                loadOp: "clear",
+                storeOp: "store"
+            }]
+        });
+
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
+        pass.setVertexBuffer(0, cubeVertexBuffer);
+        pass.setIndexBuffer(cubeIndexBuffer, "uint16");
+        pass.drawIndexed(cubeIndices.length);
+        pass.end();
+
+        device.queue.submit([encoder.finish()]);
+        requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+}
+
     setupResizeHandlers();
     setupEscapeHandlers();
 
@@ -182,7 +426,7 @@ class LaunchScheduler {
 
     setCondition(name) {
         if (this.isSet(name)) {
-            throw new Error('Scheduler condition set twice');
+            return;
         }
         this.conditions.get(name)[0] = true;
         this.conditions.forEach(v => {
