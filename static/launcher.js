@@ -157,28 +157,39 @@ async function initWebGPU(canvas) {
         alphaMode: "opaque"
     });
 
+    // Depth buffer texture
+    const depthTexture = device.createTexture({
+        size: [canvas.width, canvas.height],
+        format: "depth24plus",
+        usage: GPUTextureUsage.RENDER_ATTACHMENT
+    });
+
     // WGSL shaders with texture + sampler
     const vertexShader = `
         struct Uniforms {
             mvp : mat4x4<f32>,
-        };
-        @group(0) @binding(0) var<uniform> uniforms : Uniforms;
+    };
+    @group(0) @binding(0) var<uniform> uniforms : Uniforms;
 
-        struct VSOut {
-            @builtin(position) pos: vec4<f32>,
-            @location(0) uv: vec2<f32>,
-        };
+    struct VSOut {
+        @builtin(position) pos: vec4<f32>,
+        @location(0) uv: vec2<f32>,
+        @location(1) normal: vec3<f32>,
+    };
 
-        @vertex
-        fn main(
-            @location(0) position: vec3<f32>,
-            @location(1) uv: vec2<f32>
-        ) -> VSOut {
-            var out: VSOut;
-            out.pos = uniforms.mvp * vec4<f32>(position, 1.0);
-            out.uv = uv;
-            return out;
-        }
+@vertex
+fn main(
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) uv: vec2<f32>
+) -> VSOut {
+    var out: VSOut;
+    out.pos = uniforms.mvp * vec4<f32>(position, 1.0);
+    out.uv = uv;
+    out.normal = normal;
+    return out;
+}
+
     `;
 
     const fragmentShader = `
@@ -210,10 +221,11 @@ async function initWebGPU(canvas) {
             module: device.createShaderModule({ code: vertexShader }),
             entryPoint: "main",
             buffers: [{
-                arrayStride: 5 * 4, // x,y,z,u,v
+                arrayStride: 8 * 4, // x,y,z,nx,ny,nz,u,v
                 attributes: [
-                    { shaderLocation: 0, offset: 0, format: "float32x3" },
-                    { shaderLocation: 1, offset: 3 * 4, format: "float32x2" }
+                    { shaderLocation: 0, offset: 0, format: "float32x3" },      // position
+                    { shaderLocation: 1, offset: 3 * 4, format: "float32x3" },  // normal
+                    { shaderLocation: 2, offset: 6 * 4, format: "float32x2" }   // uv
                 ]
             }]
         },
@@ -222,22 +234,29 @@ async function initWebGPU(canvas) {
             entryPoint: "main",
             targets: [{ format }]
         },
-        primitive: { topology: "triangle-list" }
+        primitive: { topology: "triangle-list" },
+        
+        depthStencil:{
+            format: "depth24plus",
+            depthWriteEnabled: true,
+            depthCompare: "less"
+        }
     });
 
-    // Cube vertices with UVs
-    const cubeVertices = new Float32Array([
-        // x, y, z,   u, v
-        -1, -1,  1,  0, 0,
-         1, -1,  1,  1, 0,
-         1,  1,  1,  1, 1,
-        -1,  1,  1,  0, 1,
+// x, y, z,   nx, ny, nz,   u, v
+const cubeVertices = new Float32Array([
+    // Front face (0,0,1)
+    -1, -1,  1,   0, 0, 1,   0, 0,
+     1, -1,  1,   0, 0, 1,   1, 0,
+     1,  1,  1,   0, 0, 1,   1, 1,
+    -1,  1,  1,   0, 0, 1,   0, 1,
 
-        -1, -1, -1,  0, 0,
-         1, -1, -1,  1, 0,
-         1,  1, -1,  1, 1,
-        -1,  1, -1,  0, 1
-    ]);
+    // Back face (0,0,-1)
+    -1, -1, -1,   0, 0,-1,   0, 0,
+     1, -1, -1,   0, 0,-1,   1, 0,
+     1,  1, -1,   0, 0,-1,   1, 1,
+    -1,  1, -1,   0, 0,-1,   0, 1,
+]);
 
     const cubeIndices = new Uint16Array([
         0, 1, 2,  2, 3, 0,
@@ -355,7 +374,13 @@ function startGameWithWebGPU(gpu) {
                 clearValue: { r: 0.05, g: 0.05, b: 0.08, a: 1.0 },
                 loadOp: "clear",
                 storeOp: "store"
-            }]
+            }],
+            depthStencilAttachment: {
+                view: depthTexture.createView(),
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
+                depthStoreOp: "store"
+            }
         });
 
         pass.setPipeline(pipeline);
