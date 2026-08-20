@@ -1075,9 +1075,6 @@ class LuantiLauncher {
             emsocket_set_vpn(vpnBuf);
             _free(vpnBuf);
         }
-        if (args.go) {
-            irrlicht_force_pointerlock();
-        }
         mtScheduler.setCondition("launch_called");
     }
 }
